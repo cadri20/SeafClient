@@ -24,6 +24,8 @@ namespace SeafClient.Requests.Files
         public string TargetDirectory { get; set; }
 
         List<UploadFileInfo> files = new List<UploadFileInfo>();
+        
+        public bool Replace { get; set; }
 
         public List<UploadFileInfo> Files
         {
@@ -51,8 +53,8 @@ namespace SeafClient.Requests.Files
         /// <param name="filename"></param>
         /// <param name="fileContent"></param>
         /// <param name="progressCallback"></param>
-        public UploadFilesRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback)
-            : this(authToken, uploadUri, targetDirectory, progressCallback, new UploadFileInfo(filename, fileContent))
+        public UploadFilesRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback, bool replace)
+            : this(authToken, uploadUri, targetDirectory, replace, progressCallback, new UploadFileInfo(filename, fileContent))
         {
             // --
         }
@@ -65,12 +67,13 @@ namespace SeafClient.Requests.Files
         /// <param name="filename"></param>
         /// <param name="fileContent"></param>
         /// <param name="progressCallback"></param>
-        public UploadFilesRequest(string authToken, string uploadUri, string targetDirectory, Action<float> progressCallback, params UploadFileInfo[] uploadFiles)
+        public UploadFilesRequest(string authToken, string uploadUri, string targetDirectory, bool replace, Action<float> progressCallback, params UploadFileInfo[] uploadFiles)
             : base(authToken)
         {
             UploadUri = uploadUri;
             UploadProgress = progressCallback;
             TargetDirectory = targetDirectory;
+            Replace = replace;
 
             files.AddRange(uploadFiles);
         }
@@ -117,6 +120,12 @@ namespace SeafClient.Requests.Files
             dirContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""parent_dir""");
             content.Add(dirContent);
 
+            var replaceContent = new StringContent(Replace ? "1" : "0");
+            replaceContent.Headers.ContentType = null;
+            replaceContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""replace""");
+            content.Add(replaceContent);
+
+
             // transmit the content length
             long conLen;
             if (!content.ComputeLength(out conLen))
@@ -139,6 +148,7 @@ namespace SeafClient.Requests.Files
 
             return request;
         }
+        
     }
 
     /// <summary>
